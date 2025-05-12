@@ -124,6 +124,16 @@ public interface TransactionDefinition {
 	 * <p>Note that transaction synchronization within a {@code PROPAGATION_MANDATORY}
 	 * scope will always be driven by the surrounding transaction.
 	 *
+	 * 基本含义：
+	 * 1. 表示当前方法必须在事务中执行
+	 * 2. 如果当前没有事务，则抛出异常（IllegalTransactionStateException）
+	 * 3. 如果当前存在事务，则使用当前事务
+	 *
+	 * 使用场景：
+	 * 1. 适用于那些必须要在事务中执行的方法
+	 * 2. 通常用于确保方法在事务上下文中被调用
+	 * 3. 可以防止方法在非事务环境中被意外调用
+	 *
 	 * 如果当前的方法不存在事务，去调用另外一个带事务的方法时，会直接抛出异常。
 	 * 示例：如下，在执行service方法的时候，由于当前没有事务，去调用一个带事务的方法，会直接抛出异常
 	 * 	     抛出异常之后，有如下的两种情况：
@@ -156,8 +166,13 @@ public interface TransactionDefinition {
 	 * and resumed appropriately.
 	 * @see org.springframework.transaction.jta.JtaTransactionManager#setTransactionManager
 	 *
-	 * 如果当前存在事务，则暂停当前的事务，重新创建一个新的事务（如果当前没有事务，则直接创建就行）。具体做法是：将当前事务封装到一个
-	 * 实体中，然后去创建一个新的事务，新的事务接收这个实体为参数，用于事务的恢复。
+	 * 如果当前存在事务，则暂停当前的事务，重新创建一个新的事务（如果当前没有事务，则直接创建就行）。
+	 * 具体做法是：
+	 * 1. 将当前正在执行的事务的所有信息（如数据库连接、事务状态等）保存到一个TransactionStatus对象中，这个对象就像一个"快照"，记录了当前事务的完整状态
+	 * 2. 创建新事务，新事务会持有原事务的TransactionStatus对象，这样它就知道如何恢复原事务
+	 * 3. 执行新事务，在新事务中执行方法，新事务完全独立，有自己的连接和状态
+	 * 4. 新事务完成后，通过之前保存的TransactionStatus对象，将原事务的状态恢复到挂起前的状态
+	 *
 	 * 如果当前有事务，经过这个操作之后，就会存在着两个事务，这两个事务之间没有任何依赖关系，可以实现新事务回滚，外部事务可以继续执行。
 	 *
 	 * 示例：如下示例中，当前执行的service方法中存在着事务，然后去调用service2的时候，service2中使用了REQUIRES_NEW，所以会重新创建
@@ -199,6 +214,14 @@ public interface TransactionDefinition {
 	 *
 	 * 如果当前方法中存在事务，则当前的事务会被挂起。然后在当前方法中调用的新方法都会以无事务的方式执行。如果其他方法在无事务的环境下
 	 * 执行，能否生效将会取决于数据库底层的defaultAutoCommit属性。
+	 *
+	 * 存在事务时
+	 * 	1. 挂起当前事务：若当前存在事务上下文，则挂起该事务，使当前代码块以非事务方式执行。
+	 * 	2. 非事务执行：被标记的方法或代码块不会加入任何事务，所有数据库操作将直接提交，无法回滚。
+	 * 	3. 恢复事务：非事务代码执行完毕后，恢复之前挂起的事务继续执行。
+	 *
+	 * 无事务时
+	 * 	1. 直接以非事务方式执行，不会创建新的事务
 	 *
 	 * 示例：如下示例，在service方法中存在事务，调用service2方法时，由于service2是NOT_SUPPORTED类型的，所以执行service2的时候将会以
 	 * 		无事务的方式运行，此时service1方法中的执行结果将会被回滚，但是service2中的sql1执行结果是否生效取决于数据库底层的defaultAutoCommit
@@ -321,6 +344,33 @@ public interface TransactionDefinition {
 	 *     executeUpdate(sql1);
 	 *     executeUpdate(sql2);
 	 * }
+	 *
+	 * 基本概念：
+	 * 1. 如果当前存在事务，则创建一个嵌套事务
+	 * 2. 如果当前不存在事务，则创建一个新事务
+	 * 3. 嵌套事务是外部事务的子事务
+	 * 4. 嵌套事务使用保存点（SavePoint）机制实现
+	 *
+	 * 特点：
+	 * 1. 嵌套事务和外部事务使用同一个数据库连接
+	 * 2. 嵌套事务的提交不会真正提交，而是等待外部事务提交
+	 * 3. 嵌套事务的回滚只会回滚到保存点，不会影响外部事务
+	 * 4. 外部事务的回滚会导致嵌套事务一起回滚
+	 *
+	 * 与REQUIRES_NEW的区别：
+	 * REQUIRES_NEW：
+	 * 1. 创建完全独立的新事务
+	 * 2. 使用新的数据库连接
+	 * 3. 新事务和原事务完全独立
+	 * 4. 新事务的提交/回滚不影响原事务
+	 *
+	 * NESTED：
+	 * 1. 创建嵌套事务
+	 * 2. 使用同一个数据库连接
+	 * 3. 嵌套事务是外部事务的一部分
+	 * 4. 外部事务回滚会导致嵌套事务一起回滚
+	 *
+	 *
 	 *
 	 */
 	int PROPAGATION_NESTED = 6;

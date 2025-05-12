@@ -64,6 +64,11 @@ public class TransactionManagementConfigurationSelector extends AdviceModeImport
 		switch (adviceMode) {
 			// 如果是JDK动态代理模式，默认使用的是PROXY模式
 			case PROXY:
+				// 1. AutoProxyRegistrar是一个bean的后置处理器，主要功能是向Spring容器中注册一个自动代理创建器(AutoProxyCreator),这个自动代理创建器会拦截所有需要事务管理的Bean，并为它们创建代理对象,通过代理对象来实现事务的增强功能
+				// 2. 这是一个配置类，负责注册事务管理相关的组件：注册以下组件
+				//	* TransactionInterceptor：事务拦截器，用于拦截带有@Transactional注解的方法
+				//	* TransactionAttributeSource：事务属性源，用于解析@Transactional注解上的属性信息
+				//	* BeanFactoryTransactionAttributeSourceAdvisor：事务切面，将事务拦截器和事务属性源组合在一起
 				return new String[] {AutoProxyRegistrar.class.getName(), // Bean的后置处理器
 						ProxyTransactionManagementConfiguration.class.getName()}; // 注册注解事务解析器，解析事务注解上面的信息
 			// 如果是AspectJ代理模式

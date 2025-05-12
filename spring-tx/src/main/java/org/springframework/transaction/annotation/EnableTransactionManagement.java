@@ -140,6 +140,12 @@ import org.springframework.core.Ordered;
  * this case the {@code spring-aspects} module JAR must be present on the classpath, with
  * compile-time weaving or load-time weaving applying the aspect to the affected classes.
  * There is no proxy involved in such a scenario; local calls will be intercepted as well.
+ * Spring 框架中用于启用注解驱动的事务管理功能的注解，作用如下：
+ * 1. 开启 Spring 的注解驱动事务管理功能，使 @Transactional 注解在应用中生效
+ * 2. 自动注册管理事务所需的组件，比如TransactionInterceptor、AOP代理等
+ *
+ * 如何使用：
+ * 1. 通常添加到
  *
  * @author Chris Beams
  * @author Juergen Hoeller

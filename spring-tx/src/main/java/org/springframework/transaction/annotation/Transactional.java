@@ -63,6 +63,8 @@ import org.springframework.transaction.TransactionDefinition;
 public @interface Transactional {
 
 	/**
+	 * transactionManager和value属性互为别名
+	 *
 	 * Alias for {@link #transactionManager}.
 	 * @see #transactionManager
 	 */
@@ -70,6 +72,8 @@ public @interface Transactional {
 	String value() default "";
 
 	/**
+	 * transactionManager和value属性互为别名
+	 *
 	 * A <em>qualifier</em> value for the specified transaction.
 	 * <p>May be used to determine the target transaction manager,
 	 * matching the qualifier value (or the bean name) of a specific
@@ -82,6 +86,8 @@ public @interface Transactional {
 	String transactionManager() default "";
 
 	/**
+	 * 默认的事务传播类型是REQUIRED，支持当前事务，如果当前不存在事务，则新建一个事务
+	 * 
 	 * The transaction propagation type.
 	 * <p>Defaults to {@link Propagation#REQUIRED}.
 	 * @see org.springframework.transaction.interceptor.TransactionAttribute#getPropagationBehavior()
@@ -89,6 +95,8 @@ public @interface Transactional {
 	Propagation propagation() default Propagation.REQUIRED;
 
 	/**
+	 * 事务的隔离级别，默认为数据库设置的隔离级别
+	 *
 	 * The transaction isolation level.
 	 * <p>Defaults to {@link Isolation#DEFAULT}.
 	 * <p>Exclusively designed for use with {@link Propagation#REQUIRED} or
@@ -103,6 +111,8 @@ public @interface Transactional {
 	Isolation isolation() default Isolation.DEFAULT;
 
 	/**
+	 * 事务超时时间，默认取决于数据库默认的的超时时间
+	 *
 	 * The timeout for this transaction (in seconds).
 	 * <p>Defaults to the default timeout of the underlying transaction system.
 	 * <p>Exclusively designed for use with {@link Propagation#REQUIRED} or
@@ -113,6 +123,20 @@ public @interface Transactional {
 	int timeout() default TransactionDefinition.TIMEOUT_DEFAULT;
 
 	/**
+	 * 1. 主要作用：
+	 * 	当设置为 true 时，表明该事务是一个只读事务
+	 * 	这会给数据库和事务管理器一个优化提示，允许它们进行相应的性能优化
+	 * 2. 具体优化可能包括：
+	 * 	数据库可以避免对只读事务进行锁操作
+	 * 	数据库可以优化查询执行计划
+	 * 	事务管理器可以避免不必要的写操作检查
+	 * 	可以避免一些不必要的日志记录
+	 * 3.说明：
+	 * 	这只是一个提示（hint），不是强制性的约束
+	 * 	即使设置为 true，也不会阻止写操作的发生
+	 * 	如果事务管理器不支持只读优化，会静默忽略这个提示
+	 * 	默认值为 false，表示事务可以进行读写操作
+	 *
 	 * A boolean flag that can be set to {@code true} if the transaction is
 	 * effectively read-only, allowing for corresponding optimizations at runtime.
 	 * <p>Defaults to {@code false}.
@@ -127,6 +151,8 @@ public @interface Transactional {
 	boolean readOnly() default false;
 
 	/**
+	 * 定义遇到哪些异常需要进行事务回滚
+	 *
 	 * Defines zero (0) or more exception {@link Class classes}, which must be
 	 * subclasses of {@link Throwable}, indicating which exception types must cause
 	 * a transaction rollback.
@@ -143,6 +169,8 @@ public @interface Transactional {
 	Class<? extends Throwable>[] rollbackFor() default {};
 
 	/**
+	 * 定义遇到哪些异常类名需要进行事务回滚
+	 *
 	 * Defines zero (0) or more exception names (for exceptions which must be a
 	 * subclass of {@link Throwable}), indicating which exception types must cause
 	 * a transaction rollback.
@@ -163,6 +191,8 @@ public @interface Transactional {
 	String[] rollbackForClassName() default {};
 
 	/**
+	 * 定义哪些异常不需要进行事务回滚
+	 *
 	 * Defines zero (0) or more exception {@link Class Classes}, which must be
 	 * subclasses of {@link Throwable}, indicating which exception types must
 	 * <b>not</b> cause a transaction rollback.
